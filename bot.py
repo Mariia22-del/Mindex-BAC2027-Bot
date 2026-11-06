@@ -1,6 +1,8 @@
 
+
 import os
 import logging
+import asyncio
 
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (
@@ -49,7 +51,7 @@ MENU = [
 
 KEYBOARD = ReplyKeyboardMarkup(
     MENU,
-    resize_keyboard=True
+    resize_keyboard=True,
 )
 
 # -------------------------
@@ -57,68 +59,76 @@ KEYBOARD = ReplyKeyboardMarkup(
 # -------------------------
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "مرحباً بك في MINDEX Academy 🎓\n\n"
-        "رحلتك نحو التفوق في بكالوريا 2027 تبدأ هنا!\n\n"
-        "اختاري الخدمة من القائمة:",
-        reply_markup=KEYBOARD,
-    )
+    if update.message:
+        await update.message.reply_text(
+            "مرحباً بك في MINDEX Academy 🎓\n\n"
+            "رحلتك نحو التفوق في بكالوريا 2027 تبدأ هنا!\n\n"
+            "اختاري الخدمة من القائمة:",
+            reply_markup=KEYBOARD,
+        )
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "📌 أوامر البوت:\n\n"
-        "/start - تشغيل البوت\n"
-        "/help - المساعدة\n"
-        "/profile - ملفي الشخصي\n"
-        "/lessons - الدروس\n"
-        "/exercises - التمارين\n"
-        "/quiz - اختبر مستواك\n"
-        "/progress - تقدمي الدراسي\n"
-        "/ranking - الترتيب"
-    )
+    if update.message:
+        await update.message.reply_text(
+            "📌 أوامر البوت:\n\n"
+            "/start - تشغيل البوت\n"
+            "/help - المساعدة\n"
+            "/profile - ملفي الشخصي\n"
+            "/lessons - الدروس\n"
+            "/exercises - التمارين\n"
+            "/quiz - اختبر مستواك\n"
+            "/progress - تقدمي الدراسي\n"
+            "/ranking - الترتيب"
+        )
 
 
 async def profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "👤 ملفك الشخصي\n\n"
-        "سيتم تفعيل التسجيل والملف الشخصي قريباً."
-    )
+    if update.message:
+        await update.message.reply_text(
+            "👤 ملفك الشخصي\n\n"
+            "سيتم تفعيل التسجيل والملف الشخصي قريباً."
+        )
 
 
 async def lessons(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "📚 فضاء الدروس\n\n"
-        "سيتم إضافة دروس الرياضيات حسب شعبتك."
-    )
+    if update.message:
+        await update.message.reply_text(
+            "📚 فضاء الدروس\n\n"
+            "سيتم إضافة دروس الرياضيات حسب شعبتك."
+        )
 
 
 async def exercises(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "✏️ فضاء التمارين\n\n"
-        "سيتم إضافة تمارين متدرجة مع الحلول."
-    )
+    if update.message:
+        await update.message.reply_text(
+            "✏️ فضاء التمارين\n\n"
+            "سيتم إضافة تمارين متدرجة مع الحلول."
+        )
 
 
 async def quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "🧠 اختبر مستواك\n\n"
-        "اختبارات تحديد المستوى ستكون متاحة قريباً."
-    )
+    if update.message:
+        await update.message.reply_text(
+            "🧠 اختبر مستواك\n\n"
+            "اختبارات تحديد المستوى ستكون متاحة قريباً."
+        )
 
 
 async def progress(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "📊 تقدمك الدراسي\n\n"
-        "سيظهر تقدمك ونقاطك هنا بعد تفعيل نظام الحسابات."
-    )
+    if update.message:
+        await update.message.reply_text(
+            "📊 تقدمك الدراسي\n\n"
+            "سيظهر تقدمك ونقاطك هنا بعد تفعيل نظام الحسابات."
+        )
 
 
 async def ranking(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "🏆 الترتيب\n\n"
-        "سيتم تفعيل الترتيب الوطني وترتيب الولايات قريباً."
-    )
+    if update.message:
+        await update.message.reply_text(
+            "🏆 الترتيب\n\n"
+            "سيتم تفعيل الترتيب الوطني وترتيب الولايات قريباً."
+        )
 
 
 # -------------------------
@@ -173,6 +183,9 @@ def main():
         )
     )
 
+    # Fix for Python 3.14 event loop
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
     app.run_webhook(
         listen="0.0.0.0",
         port=PORT,
@@ -184,4 +197,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
