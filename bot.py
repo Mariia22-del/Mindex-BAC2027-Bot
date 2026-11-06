@@ -1,4 +1,6 @@
+
 import os
+import asyncio
 import logging
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -9,10 +11,15 @@ from telegram.ext import (
     ContextTypes
 )
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
+
 TOKEN = os.environ["BOT_TOKEN"]
 WEBHOOK_URL = os.environ["WEBHOOK_URL"].rstrip("/")
 PORT = int(os.environ.get("PORT", 10000))
+
 
 def main_menu():
     keyboard = [
@@ -95,6 +102,8 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CallbackQueryHandler(buttons))
+
+    asyncio.set_event_loop(asyncio.new_event_loop())
 
     app.run_webhook(
         listen="0.0.0.0",
