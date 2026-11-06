@@ -1,7 +1,6 @@
 
 import os
 import logging
-import asyncio
 
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (
@@ -21,7 +20,6 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-# Hide Telegram API URLs and tokens from logs
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 # -------------------------
@@ -29,7 +27,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 # -------------------------
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL", "").rstrip("/")
 PORT = int(os.getenv("PORT", "10000"))
 
 if not BOT_TOKEN:
@@ -37,8 +35,6 @@ if not BOT_TOKEN:
 
 if not WEBHOOK_URL:
     raise RuntimeError("WEBHOOK_URL is missing")
-
-WEBHOOK_URL = WEBHOOK_URL.rstrip("/")
 
 # -------------------------
 # Main menu
@@ -60,22 +56,16 @@ KEYBOARD = ReplyKeyboardMarkup(
 # Commands
 # -------------------------
 
-async def start(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "مرحباً بك في MINDEX Academy 🎓\n\n"
         "رحلتك نحو التفوق في بكالوريا 2027 تبدأ هنا!\n\n"
         "اختاري الخدمة من القائمة:",
-        reply_markup=KEYBOARD
+        reply_markup=KEYBOARD,
     )
 
 
-async def help_command(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📌 أوامر البوت:\n\n"
         "/start - تشغيل البوت\n"
@@ -89,60 +79,42 @@ async def help_command(
     )
 
 
-async def profile(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+async def profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "👤 ملفك الشخصي\n\n"
         "سيتم تفعيل التسجيل والملف الشخصي قريباً."
     )
 
 
-async def lessons(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+async def lessons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📚 فضاء الدروس\n\n"
         "سيتم إضافة دروس الرياضيات حسب شعبتك."
     )
 
 
-async def exercises(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+async def exercises(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "✏️ فضاء التمارين\n\n"
         "سيتم إضافة تمارين متدرجة مع الحلول."
     )
 
 
-async def quiz(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+async def quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🧠 اختبر مستواك\n\n"
         "اختبارات تحديد المستوى ستكون متاحة قريباً."
     )
 
 
-async def progress(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+async def progress(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "📊 تقدمك الدراسي\n\n"
         "سيظهر تقدمك ونقاطك هنا بعد تفعيل نظام الحسابات."
     )
 
 
-async def ranking(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
+async def ranking(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🏆 الترتيب\n\n"
         "سيتم تفعيل الترتيب الوطني وترتيب الولايات قريباً."
@@ -153,11 +125,9 @@ async def ranking(
 # Menu buttons
 # -------------------------
 
-async def menu_handler(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
-    text = update.message.text
+async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.text:
+        return
 
     actions = {
         "📚 الدروس": lessons,
@@ -169,23 +139,22 @@ async def menu_handler(
         "ℹ️ المساعدة": help_command,
     }
 
-    action = actions.get(text)
+    action = actions.get(update.message.text)
 
     if action:
         await action(update, context)
     else:
         await update.message.reply_text(
             "اختاري خدمة من القائمة من فضلك 👇",
-            reply_markup=KEYBOARD
+            reply_markup=KEYBOARD,
         )
 
 
 # -------------------------
-# Start bot
+# Main application
 # -------------------------
 
 def main():
-
     app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -200,12 +169,9 @@ def main():
     app.add_handler(
         MessageHandler(
             filters.TEXT & ~filters.COMMAND,
-            menu_handler
+            menu_handler,
         )
     )
-
-    # Python event loop setup
-    asyncio.set_event_loop(asyncio.new_event_loop())
 
     app.run_webhook(
         listen="0.0.0.0",
@@ -218,3 +184,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
