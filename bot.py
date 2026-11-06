@@ -1,11 +1,7 @@
 import os
 import logging
 
-from telegram import (
-    Update,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup
-)
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -13,15 +9,11 @@ from telegram.ext import (
     ContextTypes
 )
 
-# إعدادات البوت
-TOKEN = os.getenv("BOT_TOKEN")
+logging.basicConfig(level=logging.INFO)
+TOKEN = os.environ["BOT_TOKEN"]
+WEBHOOK_URL = os.environ["WEBHOOK_URL"].rstrip("/")
+PORT = int(os.environ.get("PORT", 10000))
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO
-)
-
-# القائمة الرئيسية
 def main_menu():
     keyboard = [
         [
@@ -30,111 +22,66 @@ def main_menu():
         ],
         [
             InlineKeyboardButton("🧠 اختبر مستواك", callback_data="quiz"),
-            InlineKeyboardButton("🎯 تحدي السرعة", callback_data="challenge")
+            InlineKeyboardButton("🎯 التحدي اليومي", callback_data="challenge")
         ],
         [
-            InlineKeyboardButton("👤 ملفي الشخصي", callback_data="profile"),
-            InlineKeyboardButton("📊 تقدمي", callback_data="progress")
+            InlineKeyboardButton("🤖 اسأل MINDEX AI", callback_data="ai"),
+            InlineKeyboardButton("👤 ملفي الشخصي", callback_data="profile")
         ],
         [
-            InlineKeyboardButton("🏆 الترتيب", callback_data="ranking"),
-            InlineKeyboardButton("ℹ️ المساعدة", callback_data="help")
+            InlineKeyboardButton("📊 تقدمي", callback_data="progress"),
+            InlineKeyboardButton("🏆 الترتيب", callback_data="ranking")
         ]
     ]
-
     return InlineKeyboardMarkup(keyboard)
 
 
-# أمر البداية
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
 
-    welcome = (
-        f"🎓 أهلاً {user.first_name} في MINDEX Academy!\n\n"
-        "🇩🇿 رحلتك نحو التفوق في بكالوريا 2027 تبدأ من هنا.\n\n"
-        "📐 تعلّم، تدرّب، اختبر مستواك وطوّر مهاراتك.\n\n"
-        "✨ من الصفر نحو التميز!\n\n"
-        "اختَر من القائمة:"
-    )
-
     await update.message.reply_text(
-        welcome,
+        f"🎓 أهلاً {user.first_name} في MINDEX Academy!\n\n"
+        "🇩🇿 رحلتك نحو بكالوريا 2027 تبدأ هنا.\n\n"
+        "📐 تعلّم، تدرّب، اختبر مستواك وطوّر مهاراتك.\n\n"
+        "✨ من الصفر نحو التميز!",
         reply_markup=main_menu()
     )
 
 
-# التعامل مع الأزرار
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🎓 مرحباً بك في MINDEX Academy!\n"
+        "استعمل /start لفتح القائمة الرئيسية."
+    )
+
+
 async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    data = query.data
+    sections = {
+        "lessons": "📚 قسم الدروس\n\nالدروس حسب البرنامج الوزاري المعتمد.",
+        "exercises": "✏️ قسم التمارين\n\nتمارين متدرجة مع حلول مفصلة.",
+        "quiz": "🧠 اختبر مستواك\n\nاختبارات لتقييم مكتسباتك.",
+        "challenge": "🎯 التحدي اليومي\n\nتحدٍّ جديد كل يوم.",
+        "ai": "🤖 MINDEX AI\n\nاطرح أسئلتك حول الرياضيات وطرق الدراسة والتحضير للبكالوريا.",
+        "profile": "👤 ملفك الشخصي\n\nسيتم إضافة بيانات التسجيل لاحقاً.",
+        "progress": "📊 تقدمي\n\nستظهر هنا نتائجك ونقاط تقدمك.",
+        "ranking": "🏆 الترتيب\n\nالترتيب الوطني وترتيب الولاية."
+    }
 
-    if data == "lessons":
-        text = (
-            "📚 قسم الدروس\n\n"
-            "الدروس المنظمة حسب برنامج الرياضيات لبكالوريا 2027.\n\n"
-            "سيتم إضافة الدروس والتحقق من مطابقتها للبرنامج الرسمي."
+    if query.data == "home":
+        await query.edit_message_text(
+            "🎓 MINDEX Academy | BAC 2027\n\nاختَر القسم:",
+            reply_markup=main_menu()
         )
+        return
 
-    elif data == "exercises":
-        text = (
-            "✏️ قسم التمارين\n\n"
-            "تمارين متدرجة في الصعوبة، مع حلول مفصلة.\n\n"
-            "قريباً!"
-        )
+    text = sections.get(query.data, "اختيار غير معروف.")
 
-    elif data == "quiz":
-        text = (
-            "🧠 اختبر مستواك\n\n"
-            "اختبارات لتقييم مكتسباتك وتحديد نقاط القوة والضعف.\n\n"
-            "قريباً!"
-        )
-
-    elif data == "challenge":
-        text = (
-            "🎯 تحدي السرعة\n\n"
-            "تحديات رياضية بوقت محدد لقياس سرعة ودقة الإجابة.\n\n"
-            "قريباً!"
-        )
-
-    elif data == "profile":
-        user = query.from_user
-        text = (
-            "👤 ملفك الشخصي\n\n"
-            f"الاسم: {user.first_name}\n"
-            f"Telegram ID: {user.id}\n\n"
-            "سيتم إضافة معلومات التسجيل والشعبة والولاية لاحقاً."
-        )
-
-    elif data == "progress":
-        text = (
-            "📊 تقدمي الدراسي\n\n"
-            "هنا ستظهر نتائجك، نقاطك، "
-            "ومستوى تقدمك في الرياضيات."
-        )
-
-    elif data == "ranking":
-        text = (
-            "🏆 الترتيب الوطني\n\n"
-            "ترتيب التلاميذ حسب النقاط والإنجازات.\n\n"
-            "سيتم تفعيله بعد إنشاء نظام الحسابات."
-        )
-
-    elif data == "help":
-        text = (
-            "ℹ️ المساعدة\n\n"
-            "/start - تشغيل البوت\n"
-            "/help - المساعدة\n\n"
-            "MINDEX Academy | BAC 2027 🎓"
-        )
-
-    else:
-        text = "اختيار غير معروف."
-
-    keyboard = [
-        [InlineKeyboardButton("🏠 القائمة الرئيسية", callback_data="home")]
-    ]
+    keyboard = [[
+        InlineKeyboardButton("🏠 القائمة الرئيسية", callback_data="home")
+    ]]
 
     await query.edit_message_text(
         text,
@@ -142,40 +89,19 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-# العودة إلى القائمة الرئيسية
-async def home(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    await query.edit_message_text(
-        "🎓 MINDEX Academy | BAC 2027\n\nاختَر القسم الذي تريده:",
-        reply_markup=main_menu()
-    )
-
-
-# المساعدة
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "مرحباً بك في MINDEX Academy! 🎓\n\n"
-        "استعمل /start لفتح القائمة الرئيسية."
-    )
-
-
-# تشغيل البوت
 def main():
-    if not TOKEN:
-        raise RuntimeError("BOT_TOKEN is missing!")
-
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CallbackQueryHandler(home, pattern="^home$"))
     app.add_handler(CallbackQueryHandler(buttons))
 
-    print("MINDEX Academy is running...")
-
-    app.run_polling()
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        url_path="telegram",
+        webhook_url=f"{WEBHOOK_URL}/telegram"
+    )
 
 
 if __name__ == "__main__":
