@@ -1,115 +1,218 @@
 
 import os
-import asyncio
 import logging
+import asyncio
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (
     Application,
     CommandHandler,
-    CallbackQueryHandler,
-    ContextTypes
+    MessageHandler,
+    ContextTypes,
+    filters,
 )
+
+# -------------------------
+# Logging
+# -------------------------
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO
+    level=logging.INFO,
 )
 
-TOKEN = os.environ["BOT_TOKEN"]
-WEBHOOK_URL = os.environ["WEBHOOK_URL"].rstrip("/")
-PORT = int(os.environ.get("PORT", 10000))
+# Hide Telegram API URLs and tokens from logs
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
+# -------------------------
+# Environment variables
+# -------------------------
 
-def main_menu():
-    keyboard = [
-        [
-            InlineKeyboardButton("📚 الدروس", callback_data="lessons"),
-            InlineKeyboardButton("✏️ التمارين", callback_data="exercises")
-        ],
-        [
-            InlineKeyboardButton("🧠 اختبر مستواك", callback_data="quiz"),
-            InlineKeyboardButton("🎯 التحدي اليومي", callback_data="challenge")
-        ],
-        [
-            InlineKeyboardButton("🤖 اسأل MINDEX AI", callback_data="ai"),
-            InlineKeyboardButton("👤 ملفي الشخصي", callback_data="profile")
-        ],
-        [
-            InlineKeyboardButton("📊 تقدمي", callback_data="progress"),
-            InlineKeyboardButton("🏆 الترتيب", callback_data="ranking")
-        ]
-    ]
-    return InlineKeyboardMarkup(keyboard)
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+PORT = int(os.getenv("PORT", "10000"))
 
+if not BOT_TOKEN:
+    raise RuntimeError("BOT_TOKEN is missing")
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
+if not WEBHOOK_URL:
+    raise RuntimeError("WEBHOOK_URL is missing")
 
+WEBHOOK_URL = WEBHOOK_URL.rstrip("/")
+
+# -------------------------
+# Main menu
+# -------------------------
+
+MENU = [
+    ["📚 الدروس", "✏️ التمارين"],
+    ["🧠 اختبر مستواك", "👤 ملفي الشخصي"],
+    ["📊 تقدمي الدراسي", "🏆 الترتيب"],
+    ["ℹ️ المساعدة"],
+]
+
+KEYBOARD = ReplyKeyboardMarkup(
+    MENU,
+    resize_keyboard=True
+)
+
+# -------------------------
+# Commands
+# -------------------------
+
+async def start(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
     await update.message.reply_text(
-        f"🎓 أهلاً {user.first_name} في MINDEX Academy!\n\n"
-        "🇩🇿 رحلتك نحو بكالوريا 2027 تبدأ هنا.\n\n"
-        "📐 تعلّم، تدرّب، اختبر مستواك وطوّر مهاراتك.\n\n"
-        "✨ من الصفر نحو التميز!",
-        reply_markup=main_menu()
+        "مرحباً بك في MINDEX Academy 🎓\n\n"
+        "رحلتك نحو التفوق في بكالوريا 2027 تبدأ هنا!\n\n"
+        "اختاري الخدمة من القائمة:",
+        reply_markup=KEYBOARD
     )
 
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def help_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
     await update.message.reply_text(
-        "🎓 مرحباً بك في MINDEX Academy!\n"
-        "استعمل /start لفتح القائمة الرئيسية."
+        "📌 أوامر البوت:\n\n"
+        "/start - تشغيل البوت\n"
+        "/help - المساعدة\n"
+        "/profile - ملفي الشخصي\n"
+        "/lessons - الدروس\n"
+        "/exercises - التمارين\n"
+        "/quiz - اختبر مستواك\n"
+        "/progress - تقدمي الدراسي\n"
+        "/ranking - الترتيب"
     )
 
 
-async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
+async def profile(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    await update.message.reply_text(
+        "👤 ملفك الشخصي\n\n"
+        "سيتم تفعيل التسجيل والملف الشخصي قريباً."
+    )
 
-    sections = {
-        "lessons": "📚 قسم الدروس\n\nالدروس حسب البرنامج الوزاري المعتمد.",
-        "exercises": "✏️ قسم التمارين\n\nتمارين متدرجة مع حلول مفصلة.",
-        "quiz": "🧠 اختبر مستواك\n\nاختبارات لتقييم مكتسباتك.",
-        "challenge": "🎯 التحدي اليومي\n\nتحدٍّ جديد كل يوم.",
-        "ai": "🤖 MINDEX AI\n\nاطرح أسئلتك حول الرياضيات وطرق الدراسة والتحضير للبكالوريا.",
-        "profile": "👤 ملفك الشخصي\n\nسيتم إضافة بيانات التسجيل لاحقاً.",
-        "progress": "📊 تقدمي\n\nستظهر هنا نتائجك ونقاط تقدمك.",
-        "ranking": "🏆 الترتيب\n\nالترتيب الوطني وترتيب الولاية."
+
+async def lessons(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    await update.message.reply_text(
+        "📚 فضاء الدروس\n\n"
+        "سيتم إضافة دروس الرياضيات حسب شعبتك."
+    )
+
+
+async def exercises(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    await update.message.reply_text(
+        "✏️ فضاء التمارين\n\n"
+        "سيتم إضافة تمارين متدرجة مع الحلول."
+    )
+
+
+async def quiz(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    await update.message.reply_text(
+        "🧠 اختبر مستواك\n\n"
+        "اختبارات تحديد المستوى ستكون متاحة قريباً."
+    )
+
+
+async def progress(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    await update.message.reply_text(
+        "📊 تقدمك الدراسي\n\n"
+        "سيظهر تقدمك ونقاطك هنا بعد تفعيل نظام الحسابات."
+    )
+
+
+async def ranking(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    await update.message.reply_text(
+        "🏆 الترتيب\n\n"
+        "سيتم تفعيل الترتيب الوطني وترتيب الولايات قريباً."
+    )
+
+
+# -------------------------
+# Menu buttons
+# -------------------------
+
+async def menu_handler(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    text = update.message.text
+
+    actions = {
+        "📚 الدروس": lessons,
+        "✏️ التمارين": exercises,
+        "🧠 اختبر مستواك": quiz,
+        "👤 ملفي الشخصي": profile,
+        "📊 تقدمي الدراسي": progress,
+        "🏆 الترتيب": ranking,
+        "ℹ️ المساعدة": help_command,
     }
 
-    if query.data == "home":
-        await query.edit_message_text(
-            "🎓 MINDEX Academy | BAC 2027\n\nاختَر القسم:",
-            reply_markup=main_menu()
+    action = actions.get(text)
+
+    if action:
+        await action(update, context)
+    else:
+        await update.message.reply_text(
+            "اختاري خدمة من القائمة من فضلك 👇",
+            reply_markup=KEYBOARD
         )
-        return
 
-    text = sections.get(query.data, "اختيار غير معروف.")
 
-    keyboard = [[
-        InlineKeyboardButton("🏠 القائمة الرئيسية", callback_data="home")
-    ]]
-
-    await query.edit_message_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-
+# -------------------------
+# Start bot
+# -------------------------
 
 def main():
-    app = Application.builder().token(TOKEN).build()
+
+    app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CallbackQueryHandler(buttons))
+    app.add_handler(CommandHandler("profile", profile))
+    app.add_handler(CommandHandler("lessons", lessons))
+    app.add_handler(CommandHandler("exercises", exercises))
+    app.add_handler(CommandHandler("quiz", quiz))
+    app.add_handler(CommandHandler("progress", progress))
+    app.add_handler(CommandHandler("ranking", ranking))
 
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            menu_handler
+        )
+    )
+
+    # Python event loop setup
     asyncio.set_event_loop(asyncio.new_event_loop())
 
     app.run_webhook(
         listen="0.0.0.0",
         port=PORT,
         url_path="telegram",
-        webhook_url=f"{WEBHOOK_URL}/telegram"
+        webhook_url=f"{WEBHOOK_URL}/telegram",
+        allowed_updates=Update.ALL_TYPES,
     )
 
 
